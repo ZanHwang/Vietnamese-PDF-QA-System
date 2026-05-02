@@ -1,0 +1,13 @@
+{
+  "name": "a5_multiquery",
+  "group": "A5",
+  "config": {
+    "query_mode": "multiquery"
+  },
+  "metrics": {
+    "exact_match": 0.12,
+    "rouge_l": 0.4185,
+    "n_samples": 100,
+    "context_hit_rate": 0.81
+  }
+}

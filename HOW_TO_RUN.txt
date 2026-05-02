@@ -1,0 +1,92 @@
+==================================================
+HƯỚNG DẪN SETUP & CHẠY DỰ ÁN RAG
+==================================================
+
+1. TẠO VIRTUAL ENVIRONMENT
+--------------------------------------------------
+python -m venv rag_env
+
+# Windows:
+rag_env\Scripts\activate
+
+# Linux/Mac:
+source rag_env/bin/activate
+
+
+2. CÀI ĐẶT THƯ VIỆN
+--------------------------------------------------
+# Bước 2a: cài chromadb trước (dùng --prefer-binary để tránh lỗi build C++ trên Windows)
+pip install chromadb --prefer-binary
+
+# Bước 2b: cài phần còn lại
+pip install -r requirements.txt
+
+
+3. CẤU HÌNH API KEY
+--------------------------------------------------
+- Copy file .env.example thành .env
+- Điền GROQ_API_KEY từ: https://console.groq.com/
+
+
+4. THÊM PDF
+--------------------------------------------------
+- Đặt các file PDF tiếng Việt vào thư mục: data/pdfs/
+
+
+5. CHẠY INGESTION (load, chunk, embed PDF vào ChromaDB)
+--------------------------------------------------
+cd BTL_RAG
+python src/ingestion/ingest.py
+
+
+6. CHUẨN BỊ BENCHMARK (UIT-ViQuAD 2.0)
+--------------------------------------------------
+# Tải dataset và tạo 400 QA pairs + 287 context files
+python src/ingestion/prepare_viquad.py
+
+# Ingest vào ChromaDB (PDF + ViQuAD contexts)
+python src/ingestion/ingest.py
+
+
+7. CHẠY ĐÁNH GIÁ M1 (Naive RAG)
+--------------------------------------------------
+# Chạy toàn bộ 400 cặp (có resume tự động nếu bị ngắt)
+python run_m1_eval.py
+
+# Xem kết quả
+# results/m1_raw.json     — chi tiết từng câu hỏi
+# results/m1_baseline.json — tổng hợp metrics
+
+
+9. CHẠY WEB DEMO (Phase 6)
+--------------------------------------------------
+# Bước 1: Khởi động backend FastAPI (từ thư mục gốc BTL_RAG)
+rag_env\Scripts\activate
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Bước 2: Khởi động frontend React (terminal mới)
+cd frontend
+npm install          # chỉ cần lần đầu
+npm run dev
+
+# Mở trình duyệt: http://localhost:5173
+#
+# Tính năng:
+#   - Tab Q&A        : nhập câu hỏi, chọn method M1-M5, xem trả lời + nguồn
+#   - Tab So sánh    : cùng câu hỏi, 2 method cạnh nhau
+#   - Tab Metrics    : bảng kết quả M1-M5 (ROUGE-L, CHR, RAGAS)
+#   - Upload PDF     : tải PDF lên và index vào ChromaDB ngay
+
+
+==================================================
+CẤU TRÚC THƯ MỤC
+==================================================
+data/pdfs/          - Đặt PDF vào đây
+data/chroma_db/     - Vector store (tự tạo khi chạy ingest)
+data/qa_benchmark.json - Bộ câu hỏi đánh giá (tạo thủ công)
+src/                - Source code
+results/            - Kết quả experiment (JSON/CSV)
+notebooks/          - Jupyter notebooks
+backend/            - FastAPI backend
+frontend/           - React app
+==================================================

@@ -1,0 +1,20 @@
+{
+  "method": "M2_HybridRAG",
+  "config": {
+    "top_k": 4,
+    "chunk_size": 400,
+    "chunk_overlap": 120,
+    "embedding": "paraphrase-multilingual-MiniLM-L12-v2",
+    "retrieval": "BM25 + Dense + RRF"
+  },
+  "metrics": {
+    "exact_match": 0.15,
+    "rouge_l": 0.4456,
+    "n_samples": 400,
+    "context_hit_rate": 0.91,
+    "context_recall": 0.7143,
+    "faithfulness": 0.7333,
+    "answer_relevancy": 0.4724,
+    "n_ragas_samples": 50
+  }
+}

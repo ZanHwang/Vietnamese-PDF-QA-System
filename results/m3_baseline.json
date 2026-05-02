@@ -1,0 +1,22 @@
+{
+  "method": "M3_RAGFusion",
+  "config": {
+    "top_k": 4,
+    "chunk_size": 400,
+    "chunk_overlap": 120,
+    "embedding": "paraphrase-multilingual-MiniLM-L12-v2",
+    "retrieval": "Multi-query + BM25 + Dense + RRF×2",
+    "n_variants": 3
+  },
+  "metrics": {
+    "exact_match": 0.1575,
+    "rouge_l": 0.4462,
+    "n_samples": 400,
+    "context_hit_rate": 0.91,
+    "context_recall": 0.875,
+    "faithfulness": 0.5294,
+    "answer_relevancy": 0.3596,
+    "n_ragas_samples": 50,
+    "ragas_note": "RAGAS run with fresh Groq key, n=50"
+  }
+}

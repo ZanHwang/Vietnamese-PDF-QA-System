@@ -1,0 +1,19 @@
+{
+  "method": "M1_NaiveRAG",
+  "config": {
+    "top_k": 4,
+    "chunk_size": 400,
+    "chunk_overlap": 120,
+    "embedding": "paraphrase-multilingual-MiniLM-L12-v2"
+  },
+  "metrics": {
+    "exact_match": 0.155,
+    "rouge_l": 0.4527,
+    "n_samples": 400,
+    "context_hit_rate": 0.8225,
+    "context_recall": 0.6364,
+    "faithfulness": 0.8667,
+    "answer_relevancy": 0.4873,
+    "n_ragas_samples": 50
+  }
+}

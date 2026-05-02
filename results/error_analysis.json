@@ -1,0 +1,602 @@
+{
+  "m1": {
+    "method": "M1",
+    "n": 400,
+    "stats": {
+      "correct": {
+        "count": 234,
+        "pct": 58.5
+      },
+      "retrieval_fail": {
+        "count": 67,
+        "pct": 16.8
+      },
+      "generation_fail": {
+        "count": 46,
+        "pct": 11.5
+      },
+      "partial": {
+        "count": 53,
+        "pct": 13.2
+      },
+      "ambiguous_query": {
+        "count": 102,
+        "pct": 25.5
+      }
+    },
+    "examples": {
+      "correct": [
+        {
+          "question": "Mỗi học sinh tại Texas thì bang phải chi bao nhiêu tiền vào khoảng giữa năm 2006 và 2007?",
+          "answer": "7.275 đô la Mỹ.",
+          "gt": "$7.275",
+          "rl": 0.571,
+          "chr": 1.0
+        },
+        {
+          "question": "Tại sao những nước bị Tây Ban Nha kiểm soát lại đồng loạt đòi tách ra?",
+          "answer": "Cuộc chiến tranh Iberia nổ ra giữa Tây Ban Nha, Bồ Đào Nha và Anh với quân Pháp đã tạo điều kiện cho",
+          "gt": "Cuộc chiến tranh Iberia nổ ra giữa Tây Ban Nha, Bồ Đào Nha và Anh với quân Pháp",
+          "rl": 0.679,
+          "chr": 1.0
+        },
+        {
+          "question": "Vị trí của Canada trong lĩnh vực người máy không gian là gì?",
+          "answer": "Canada là một nước tiên phong trong lĩnh vực người máy không gian.",
+          "gt": "một nước tiên phong",
+          "rl": 0.471,
+          "chr": 1.0
+        }
+      ],
+      "retrieval_fail": [
+        {
+          "question": "Công trình nổi tiếng nào được xây dựng để đánh dấu 100 năm cách mạng Pháp?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "Tháp Eiffel",
+          "rl": 0.0,
+          "chr": 0.0
+        },
+        {
+          "question": "Có bao nhiêu người chết trong cuộc xung đột vũ trang?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "xấp xỉ 1.000 người",
+          "rl": 0.0,
+          "chr": 0.0
+        },
+        {
+          "question": "Hình ảnh Paris đối với các nước trên thế giới như thế nào sau thế chiến II?",
+          "answer": "Sau thế chiến II, Paris vẫn là một trung tâm văn hóa, kinh tế của cả thế giới.",
+          "gt": "một biểu tượng của sự hòa giải",
+          "rl": 0.16,
+          "chr": 0.0
+        }
+      ],
+      "generation_fail": [
+        {
+          "question": "Khả năng tìm kiếm mục tiêu của tên lửa Scud được phát minh dựa trên kỹ thuật gì?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "hệ thống dẫn đường quán tính",
+          "rl": 0.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Tổng thiệt hại nhân thân mà Uganda phải chịu là bao nhiêu?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "hàng chục ngàn thương vong",
+          "rl": 0.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Có những vấn đề bất cập nào tồn tại ở La Défense?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "giá bất động sản quá cao và diện tích các văn phòng rất giới hạn",
+          "rl": 0.0,
+          "chr": 1.0
+        }
+      ],
+      "partial": [
+        {
+          "question": "Khi nào thì Canada được thống nhất thành một tỉnh?",
+          "answer": "Năm 1841, Thượng Canada và Hạ Canada tái thống nhất thành tỉnh Canada.",
+          "gt": "năm 1841",
+          "rl": 0.267,
+          "chr": 1.0
+        },
+        {
+          "question": "Thành phố nào đứng nhất về vẻ đẹp theo khảo sát của Global Market Insite?",
+          "answer": "Thành phố Paris đứng đầu là thành phố đẹp nhất theo khảo sát của Global Market Insite.",
+          "gt": "Paris",
+          "rl": 0.111,
+          "chr": 1.0
+        },
+        {
+          "question": "Người Gruzia chấp nhận ngưng bắn khi nào?",
+          "answer": "Năm 1992, Gruzia bị buộc phải chấp nhận ngừng bắn để tránh sự leo thang xung đột với Nga.",
+          "gt": "Năm 1992",
+          "rl": 0.19,
+          "chr": 1.0
+        }
+      ]
+    }
+  },
+  "m2": {
+    "method": "M2",
+    "n": 400,
+    "stats": {
+      "correct": {
+        "count": 234,
+        "pct": 58.5
+      },
+      "retrieval_fail": {
+        "count": 29,
+        "pct": 7.2
+      },
+      "generation_fail": {
+        "count": 83,
+        "pct": 20.8
+      },
+      "partial": {
+        "count": 54,
+        "pct": 13.5
+      },
+      "ambiguous_query": {
+        "count": 102,
+        "pct": 25.5
+      }
+    },
+    "examples": {
+      "correct": [
+        {
+          "question": "Mỗi học sinh tại Texas thì bang phải chi bao nhiêu tiền vào khoảng giữa năm 2006 và 2007?",
+          "answer": "7.275 (đô la Mỹ)",
+          "gt": "$7.275",
+          "rl": 0.571,
+          "chr": 1.0
+        },
+        {
+          "question": "Khi nào thì Canada được thống nhất thành một tỉnh?",
+          "answer": "Năm 1841.",
+          "gt": "năm 1841",
+          "rl": 1.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Tại sao những nước bị Tây Ban Nha kiểm soát lại đồng loạt đòi tách ra?",
+          "answer": "Do cuộc chiến tranh Iberia nổ ra giữa Tây Ban Nha, Bồ Đào Nha và Anh với quân Pháp đã tạo điều kiện ",
+          "gt": "Cuộc chiến tranh Iberia nổ ra giữa Tây Ban Nha, Bồ Đào Nha và Anh với quân Pháp",
+          "rl": 0.486,
+          "chr": 1.0
+        }
+      ],
+      "retrieval_fail": [
+        {
+          "question": "Công trình nổi tiếng nào được xây dựng để đánh dấu 100 năm cách mạng Pháp?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "Tháp Eiffel",
+          "rl": 0.0,
+          "chr": 0.0
+        },
+        {
+          "question": "Hình ảnh Paris đối với các nước trên thế giới như thế nào sau thế chiến II?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "một biểu tượng của sự hòa giải",
+          "rl": 0.0,
+          "chr": 0.0
+        },
+        {
+          "question": "\"Tấn trò đời\" nói về giai cấp nào trong xã hội?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "các tầng lớp cao",
+          "rl": 0.0,
+          "chr": 0.0
+        }
+      ],
+      "generation_fail": [
+        {
+          "question": "Khả năng tìm kiếm mục tiêu của tên lửa Scud được phát minh dựa trên kỹ thuật gì?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "hệ thống dẫn đường quán tính",
+          "rl": 0.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Có những vấn đề bất cập nào tồn tại ở La Défense?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "giá bất động sản quá cao và diện tích các văn phòng rất giới hạn",
+          "rl": 0.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Nơi nào là nơi sinh sống chủ yếu của những người Caldoche tại Nouvelle-Calédonie?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "các khu vực nông thôn thuộc duyên hải phía tây đảo chính",
+          "rl": 0.0,
+          "chr": 1.0
+        }
+      ],
+      "partial": [
+        {
+          "question": "Có bao nhiêu người chết trong cuộc xung đột vũ trang?",
+          "answer": "Trong ngữ cảnh được cung cấp, có hai con số về người chết tương ứng với các cuộc xung đột khác nhau:",
+          "gt": "xấp xỉ 1.000 người",
+          "rl": 0.175,
+          "chr": 1.0
+        },
+        {
+          "question": "Vì sao đoàn nghiên cứu bệnh dịch của Tổ chức sức khoẻ thế giới không được tiến hành công việc tại mi",
+          "answer": "Saddam đã từ chối cho đoàn nghiên cứu bệnh dịch của Tổ chức sức khỏe thế giới tiến hành công việc tạ",
+          "gt": "Saddam đã từ chối",
+          "rl": 0.276,
+          "chr": 1.0
+        },
+        {
+          "question": "Cơ quan nào đóng vai trò quan trọng nhất trong việc điều chỉnh lượng muối trong cơ thể?",
+          "answer": "Thận là cơ quan quan trọng nhất trong việc điều chỉnh lượng muối trong cơ thể.",
+          "gt": "thận",
+          "rl": 0.118,
+          "chr": 1.0
+        }
+      ]
+    }
+  },
+  "m3": {
+    "method": "M3",
+    "n": 400,
+    "stats": {
+      "correct": {
+        "count": 229,
+        "pct": 57.2
+      },
+      "retrieval_fail": {
+        "count": 31,
+        "pct": 7.8
+      },
+      "generation_fail": {
+        "count": 82,
+        "pct": 20.5
+      },
+      "partial": {
+        "count": 58,
+        "pct": 14.5
+      },
+      "ambiguous_query": {
+        "count": 102,
+        "pct": 25.5
+      }
+    },
+    "examples": {
+      "correct": [
+        {
+          "question": "Mỗi học sinh tại Texas thì bang phải chi bao nhiêu tiền vào khoảng giữa năm 2006 và 2007?",
+          "answer": "7.275 (đô la Mỹ).",
+          "gt": "$7.275",
+          "rl": 0.571,
+          "chr": 1.0
+        },
+        {
+          "question": "Có bao nhiêu người chết trong cuộc xung đột vũ trang?",
+          "answer": "Xấp xỉ 1.000 người chết.",
+          "gt": "xấp xỉ 1.000 người",
+          "rl": 0.909,
+          "chr": 1.0
+        },
+        {
+          "question": "Tại sao những nước bị Tây Ban Nha kiểm soát lại đồng loạt đòi tách ra?",
+          "answer": "Cuộc chiến tranh Iberia đã tạo điều kiện cho nhiều thuộc địa của Tây Ban Nha ly khai đòi độc lập.",
+          "gt": "Cuộc chiến tranh Iberia nổ ra giữa Tây Ban Nha, Bồ Đào Nha và Anh với quân Pháp",
+          "rl": 0.359,
+          "chr": 1.0
+        }
+      ],
+      "retrieval_fail": [
+        {
+          "question": "Hình ảnh Paris đối với các nước trên thế giới như thế nào sau thế chiến II?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "một biểu tượng của sự hòa giải",
+          "rl": 0.0,
+          "chr": 0.0
+        },
+        {
+          "question": "Tình hình thất nghiệp của Hoa Kỳ thay đổi như thế nào vào năm 1941?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "thất nghiệp rơi xuống dưới 1 triệu người",
+          "rl": 0.0,
+          "chr": 0.0
+        },
+        {
+          "question": "Người cầm quyền nào đã bãi bỏ chính sách công nhận Puerto Rico là một tỉnh hải ngoại?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "vua Ferdinand VII",
+          "rl": 0.0,
+          "chr": 0.0
+        }
+      ],
+      "generation_fail": [
+        {
+          "question": "Khi nào thì Canada được thống nhất thành một tỉnh?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "năm 1841",
+          "rl": 0.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Khả năng tìm kiếm mục tiêu của tên lửa Scud được phát minh dựa trên kỹ thuật gì?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "hệ thống dẫn đường quán tính",
+          "rl": 0.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Tổng thiệt hại nhân thân mà Uganda phải chịu là bao nhiêu?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "hàng chục ngàn thương vong",
+          "rl": 0.0,
+          "chr": 1.0
+        }
+      ],
+      "partial": [
+        {
+          "question": "Công trình nổi tiếng nào được xây dựng để đánh dấu 100 năm cách mạng Pháp?",
+          "answer": "Tháp Eiffel được xây dựng để đánh dấu 100 năm Cách mạng Pháp.",
+          "gt": "Tháp Eiffel",
+          "rl": 0.267,
+          "chr": 1.0
+        },
+        {
+          "question": "Vị trí của Canada trong lĩnh vực người máy không gian là gì?",
+          "answer": "Canada là một nước tiên phong trong người máy không gian, chế tạo ra các tay máy robot Canadarm, Can",
+          "gt": "một nước tiên phong",
+          "rl": 0.229,
+          "chr": 1.0
+        },
+        {
+          "question": "Khi New Calesdonia có thang nhiệt độ trong khoảng 20 °C đến 23 °C cũng là lúc tại đây đang trải qua ",
+          "answer": "Khi New Calesdonia có thang nhiệt độ trong khoảng 20 °C đến 23 °C, đó là lúc tại đây đang trải qua m",
+          "gt": "mùa mát khô",
+          "rl": 0.167,
+          "chr": 1.0
+        }
+      ]
+    }
+  },
+  "m4": {
+    "method": "M4",
+    "n": 400,
+    "stats": {
+      "correct": {
+        "count": 211,
+        "pct": 52.8
+      },
+      "retrieval_fail": {
+        "count": 84,
+        "pct": 21.0
+      },
+      "generation_fail": {
+        "count": 67,
+        "pct": 16.8
+      },
+      "partial": {
+        "count": 38,
+        "pct": 9.5
+      },
+      "ambiguous_query": {
+        "count": 102,
+        "pct": 25.5
+      }
+    },
+    "examples": {
+      "correct": [
+        {
+          "question": "Mỗi học sinh tại Texas thì bang phải chi bao nhiêu tiền vào khoảng giữa năm 2006 và 2007?",
+          "answer": "7.275.",
+          "gt": "$7.275",
+          "rl": 1.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Khi nào thì Canada được thống nhất thành một tỉnh?",
+          "answer": "Năm 1841.",
+          "gt": "năm 1841",
+          "rl": 1.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Radio Djiido và Radio Rythmes Bleus có mục tiêu chính là ai?",
+          "answer": "Các nhóm người Kanak.",
+          "gt": "các nhóm người Kanak",
+          "rl": 1.0,
+          "chr": 1.0
+        }
+      ],
+      "retrieval_fail": [
+        {
+          "question": "Công trình nổi tiếng nào được xây dựng để đánh dấu 100 năm cách mạng Pháp?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "Tháp Eiffel",
+          "rl": 0.0,
+          "chr": 0.0
+        },
+        {
+          "question": "Có bao nhiêu người chết trong cuộc xung đột vũ trang?",
+          "answer": "Có khoảng 60.000 người Canada bị giết trong cuộc xung đột vũ trang.",
+          "gt": "xấp xỉ 1.000 người",
+          "rl": 0.211,
+          "chr": 0.0
+        },
+        {
+          "question": "Khả năng tìm kiếm mục tiêu của tên lửa Scud được phát minh dựa trên kỹ thuật gì?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "hệ thống dẫn đường quán tính",
+          "rl": 0.0,
+          "chr": 0.0
+        }
+      ],
+      "generation_fail": [
+        {
+          "question": "Tổng thiệt hại nhân thân mà Uganda phải chịu là bao nhiêu?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "hàng chục ngàn thương vong",
+          "rl": 0.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Có những vấn đề bất cập nào tồn tại ở La Défense?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "giá bất động sản quá cao và diện tích các văn phòng rất giới hạn",
+          "rl": 0.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Nơi nào là nơi sinh sống chủ yếu của những người Caldoche tại Nouvelle-Calédonie?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "các khu vực nông thôn thuộc duyên hải phía tây đảo chính",
+          "rl": 0.0,
+          "chr": 1.0
+        }
+      ],
+      "partial": [
+        {
+          "question": "Tại sao những nước bị Tây Ban Nha kiểm soát lại đồng loạt đòi tách ra?",
+          "answer": "Những nước bị Tây Ban Nha kiểm soát đã đòi tách ra vì cuộc chiến tranh Iberia đã tạo điều kiện cho h",
+          "gt": "Cuộc chiến tranh Iberia nổ ra giữa Tây Ban Nha, Bồ Đào Nha và Anh với quân Pháp",
+          "rl": 0.174,
+          "chr": 1.0
+        },
+        {
+          "question": "Vị trí của Canada trong lĩnh vực người máy không gian là gì?",
+          "answer": "Canada là một nước tiên phong trong người máy không gian, chế tạo ra các tay máy robot Canadarm, Can",
+          "gt": "một nước tiên phong",
+          "rl": 0.229,
+          "chr": 1.0
+        },
+        {
+          "question": "Khi New Calesdonia có thang nhiệt độ trong khoảng 20 °C đến 23 °C cũng là lúc tại đây đang trải qua ",
+          "answer": "Khi New Calesdonia có thang nhiệt độ trong khoảng 20 °C đến 23 °C, đó là lúc tại đây đang trải qua m",
+          "gt": "mùa mát khô",
+          "rl": 0.167,
+          "chr": 1.0
+        }
+      ]
+    }
+  },
+  "m5": {
+    "method": "M5",
+    "n": 400,
+    "stats": {
+      "correct": {
+        "count": 128,
+        "pct": 32.0
+      },
+      "retrieval_fail": {
+        "count": 226,
+        "pct": 56.5
+      },
+      "generation_fail": {
+        "count": 28,
+        "pct": 7.0
+      },
+      "partial": {
+        "count": 18,
+        "pct": 4.5
+      },
+      "ambiguous_query": {
+        "count": 102,
+        "pct": 25.5
+      }
+    },
+    "examples": {
+      "correct": [
+        {
+          "question": "Mỗi học sinh tại Texas thì bang phải chi bao nhiêu tiền vào khoảng giữa năm 2006 và 2007?",
+          "answer": "7.275 (đô la Mỹ).",
+          "gt": "$7.275",
+          "rl": 0.571,
+          "chr": 1.0
+        },
+        {
+          "question": "Trong cuộc tranh cử tổng thống năm 1936, Roosevelt đã dựa vào lợi thế gì để tranh cử với Alf Landon?",
+          "answer": "Roosevelt vận động tranh cử dựa vào các chương trình New Deal của ông chống lại đối thủ Alf Landon.",
+          "gt": "các chương trình New Deal",
+          "rl": 0.4,
+          "chr": 1.0
+        },
+        {
+          "question": "Tổng thiệt hại nhân thân mà Uganda phải chịu là bao nhiêu?",
+          "answer": "Hàng chục ngàn thương vong và di dời hơn một triệu người.",
+          "gt": "hàng chục ngàn thương vong",
+          "rl": 0.588,
+          "chr": 1.0
+        }
+      ],
+      "retrieval_fail": [
+        {
+          "question": "Công trình nổi tiếng nào được xây dựng để đánh dấu 100 năm cách mạng Pháp?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "Tháp Eiffel",
+          "rl": 0.0,
+          "chr": 0.0
+        },
+        {
+          "question": "Có bao nhiêu người chết trong cuộc xung đột vũ trang?",
+          "answer": "Không tìm thấy thông tin về số người chết trong cuộc xung đột vũ trang. Tuy nhiên, trong ngữ cảnh về",
+          "gt": "xấp xỉ 1.000 người",
+          "rl": 0.1,
+          "chr": 0.0
+        },
+        {
+          "question": "Tại sao những nước bị Tây Ban Nha kiểm soát lại đồng loạt đòi tách ra?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "Cuộc chiến tranh Iberia nổ ra giữa Tây Ban Nha, Bồ Đào Nha và Anh với quân Pháp",
+          "rl": 0.0,
+          "chr": 0.0
+        }
+      ],
+      "generation_fail": [
+        {
+          "question": "Khi nào thì Canada được thống nhất thành một tỉnh?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "năm 1841",
+          "rl": 0.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Có những vấn đề bất cập nào tồn tại ở La Défense?",
+          "answer": "Không tìm thấy thông tin.",
+          "gt": "giá bất động sản quá cao và diện tích các văn phòng rất giới hạn",
+          "rl": 0.0,
+          "chr": 1.0
+        },
+        {
+          "question": "Sự kiện nào là sự kiện khỏi đầu cho việc hình thành nên quốc hội Ngắn hạn và quốc hội Dài hạn?",
+          "answer": "Sự kiện không thể dẹp loạn và vua Charles I phải triệu tập một quốc hội vào năm 1640 là sự kiện khởi",
+          "gt": "Việc bắt buộc dùng kinh cầu nguyện Anh (the English Prayer Book) tại các nhà thờ Scotland của tổng G",
+          "rl": 0.029,
+          "chr": 1.0
+        }
+      ],
+      "partial": [
+        {
+          "question": "Nguyên nhân nào từ năm 1992 đến 2004 thì Nam Ossetia sống trong hoà bình?",
+          "answer": "Từ năm 1992 đến 2004, Nam Ossetia sống trong hòa bình cho tới giữa năm 2004.",
+          "gt": "Ngày 6 tháng 11 năm 1992, Tổ chức An ninh và Hợp tác châu Âu (OSCE) thành lập một phái bộ ở Gruzia đ",
+          "rl": 0.167,
+          "chr": 1.0
+        },
+        {
+          "question": "Ai là người đã tạo nên thiết kế của Trung tâm Văn hoá Jean-Marie Tjibaou?",
+          "answer": "Renzo Piano là kiến trúc sư người Ý đã thiết kế Trung tâm Văn hoá Jean-Marie Tjibaou.",
+          "gt": "Renzo Piano",
+          "rl": 0.2,
+          "chr": 1.0
+        },
+        {
+          "question": "Đối với các vị trí còn trống trong hội đồng Texas sẽ do ai đề cử vào các vị trí đó?",
+          "answer": "Thống đốc sẽ đề cử người vào các vị trí còn trống trong hội đồng Texas.",
+          "gt": "Thống đốc",
+          "rl": 0.222,
+          "chr": 1.0
+        }
+      ]
+    }
+  }
+}

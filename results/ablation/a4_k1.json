@@ -1,0 +1,13 @@
+{
+  "name": "a4_k1",
+  "group": "A4",
+  "config": {
+    "top_k": 1
+  },
+  "metrics": {
+    "exact_match": 0.05,
+    "rouge_l": 0.2768,
+    "n_samples": 100,
+    "context_hit_rate": 0.61
+  }
+}

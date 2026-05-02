@@ -1,0 +1,16 @@
+{
+  "name": "a2_overlap_80",
+  "group": "A2",
+  "config": {
+    "rebuild": true,
+    "splitter": "recursive",
+    "chunk_size": 400,
+    "chunk_overlap": 80
+  },
+  "metrics": {
+    "exact_match": 0.09,
+    "rouge_l": 0.4041,
+    "n_samples": 100,
+    "context_hit_rate": 0.83
+  }
+}

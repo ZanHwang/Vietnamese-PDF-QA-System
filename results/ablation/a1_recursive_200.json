@@ -1,0 +1,16 @@
+{
+  "name": "a1_recursive_200",
+  "group": "A1",
+  "config": {
+    "rebuild": true,
+    "splitter": "recursive",
+    "chunk_size": 200,
+    "chunk_overlap": 60
+  },
+  "metrics": {
+    "exact_match": 0.1,
+    "rouge_l": 0.3668,
+    "n_samples": 100,
+    "context_hit_rate": 0.45
+  }
+}

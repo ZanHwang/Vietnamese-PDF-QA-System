@@ -1,0 +1,21 @@
+{
+  "method": "M4_CRAG",
+  "config": {
+    "top_k": 4,
+    "chunk_size": 400,
+    "chunk_overlap": 120,
+    "embedding": "paraphrase-multilingual-MiniLM-L12-v2",
+    "retrieval": "Dense + Relevance Filter (CORRECT/AMBIGUOUS/INCORRECT)"
+  },
+  "metrics": {
+    "exact_match": 0.1325,
+    "rouge_l": 0.403,
+    "n_samples": 400,
+    "context_hit_rate": 0.7475,
+    "context_recall": 0.625,
+    "faithfulness": 0.6825,
+    "answer_relevancy": 0.3931,
+    "n_ragas_samples": 50,
+    "ragas_note": "RAGAS run with fresh Groq key, n=50"
+  }
+}

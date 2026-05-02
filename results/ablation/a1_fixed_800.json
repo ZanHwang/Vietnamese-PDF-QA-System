@@ -1,0 +1,16 @@
+{
+  "name": "a1_fixed_800",
+  "group": "A1",
+  "config": {
+    "rebuild": true,
+    "splitter": "fixed",
+    "chunk_size": 800,
+    "chunk_overlap": 240
+  },
+  "metrics": {
+    "exact_match": 0.12,
+    "rouge_l": 0.3836,
+    "n_samples": 100,
+    "context_hit_rate": 0.84
+  }
+}

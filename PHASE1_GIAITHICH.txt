@@ -1,0 +1,328 @@
+==================================================
+PHASE 1 — HƯỚNG DẪN CHẠY & GIẢI THÍCH CHI TIẾT
+==================================================
+
+Phase 1 chạy 2 file theo thứ tự:
+
+    Bước 1: python src/ingestion/prepare_viquad.py
+    Bước 2: python src/ingestion/ingest.py
+
+Phải chạy Bước 1 trước vì Bước 2 cần dữ liệu từ Bước 1 tạo ra.
+
+
+==================================================
+BƯỚC 1 — src/ingestion/prepare_viquad.py
+==================================================
+
+MỤC ĐÍCH:
+    Tải dataset UIT-ViQuAD 2.0 từ HuggingFace, lọc và sample 400 cặp
+    câu hỏi-đáp, lưu ra 2 dạng output:
+      - data/qa_benchmark.json   → dùng để EVALUATE các phương pháp RAG
+      - data/viquad/ctx_*.txt    → dùng để INDEX vào ChromaDB
+
+----------------------------------------------------
+CODE VÀ GIẢI THÍCH TỪNG PHẦN
+----------------------------------------------------
+
+--- PHẦN 1: Import & Cấu hình ---
+
+    import os, sys, json, random
+    sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+    - sys.path.append(...)
+      File nằm ở src/ingestion/, cần import src.config ở thư mục gốc.
+      Dòng này thêm thư mục gốc vào Python path để import được.
+
+    - sys.stdout = io.TextIOWrapper(...)
+      Fix lỗi UnicodeEncodeError khi print tiếng Việt trên Windows.
+      Mặc định Windows dùng encoding cp1252 không hỗ trợ ký tự có dấu,
+      dòng này ép stdout dùng UTF-8.
+
+    N_PAIRS = 400
+    SEED = 42
+    random.seed(SEED)
+
+    - N_PAIRS = 400: số cặp QA cần lấy
+    - SEED = 42: seed cố định để kết quả reproducible — chạy lại bao
+      nhiêu lần cũng ra đúng 400 cặp đó, không bị random khác nhau
+
+
+--- PHẦN 2: Tải dataset từ HuggingFace ---
+
+    ds = load_dataset("taidng/UIT-ViQuAD2.0")
+    split = ds["validation"]
+
+    - load_dataset("taidng/UIT-ViQuAD2.0"):
+      Tải dataset UIT-ViQuAD 2.0 từ HuggingFace về máy.
+      Lần đầu tải sẽ mất vài phút (~vài trăm MB), lần sau dùng cache.
+
+    - ds["validation"]:
+      Dataset có 2 phần: "train" (~39,000 cặp) và "validation" (3,814 cặp).
+      Chọn validation vì:
+        + Sạch hơn, được kiểm tra kỹ hơn
+        + Không overlap với train → đánh giá khách quan
+        + Kích thước vừa đủ để sample 400 cặp
+
+    UIT-ViQuAD 2.0 là bộ dataset QA tiếng Việt theo chuẩn SQuAD,
+    câu hỏi được con người đặt ra từ các đoạn Wikipedia tiếng Việt.
+    Mỗi item gồm: id, title, context, question, answers
+
+
+--- PHẦN 3: Lọc câu có đáp án ---
+
+    answerable = [
+        item for item in split
+        if item["answers"]["text"]
+    ]
+
+    - ViQuAD 2.0 có 2 loại câu hỏi:
+        + Answerable: có thể trả lời từ context (chiếm đa số)
+        + Unanswerable: câu hỏi không thể trả lời từ context (cố tình)
+
+    - item["answers"]["text"] là một list string.
+      Nếu list rỗng [] → câu unanswerable → điều kiện False → loại bỏ.
+      Nếu list có phần tử → câu answerable → giữ lại.
+
+    - Kết quả: 3,814 → 2,653 cặp answerable
+
+
+--- PHẦN 4: Sample ngẫu nhiên ---
+
+    sampled = random.sample(answerable, min(N_PAIRS, len(answerable)))
+
+    - random.sample(): chọn ngẫu nhiên N phần tử, không lặp lại
+    - min(N_PAIRS, len(answerable)): phòng trường hợp dataset có ít hơn
+      400 cặp (thực tế 2,653 >> 400 nên luôn lấy đủ 400)
+    - Với seed=42, luôn ra đúng 400 cặp đó mỗi lần chạy
+
+
+--- PHẦN 5: Tạo QA benchmark ---
+
+    for item in sampled:
+        qa_pairs.append({
+            "question":     item["question"],
+            "ground_truth": item["answers"]["text"][0],
+            "context":      item["context"],
+            "source_id":    item["id"],
+            "title":        item.get("title", ""),
+        })
+
+    Mỗi cặp QA gồm 5 trường:
+    - question     : câu hỏi tiếng Việt
+                     VD: "Công trình nào được xây để kỷ niệm 100 năm CM Pháp?"
+    - ground_truth : câu trả lời đúng (lấy cái đầu tiên nếu có nhiều)
+                     VD: "Tháp Eiffel"
+    - context      : đoạn Wikipedia chứa câu trả lời
+                     → dùng làm "gold context" để tính RAGAS Context Recall
+                     (so sánh context model retrieve được vs context đúng)
+    - source_id    : ID gốc của câu hỏi trong ViQuAD (để trace)
+    - title        : tiêu đề bài Wikipedia (VD: "Tháp Eiffel")
+
+    Lưu vào data/qa_benchmark.json (UTF-8, ensure_ascii=False để giữ dấu)
+
+
+--- PHẦN 6: Lưu contexts ra file .txt ---
+
+    seen = set()
+    ctx_count = 0
+    for item in sampled:
+        ctx = item["context"]
+        if ctx in seen:
+            continue
+        seen.add(ctx)
+        fname = f"ctx_{ctx_count:04d}.txt"
+        ...
+        ctx_count += 1
+
+    - Vấn đề: 400 câu hỏi nhưng nhiều câu CÙNG 1 context.
+      VD: đoạn Wikipedia về Tháp Eiffel có thể có 3 câu hỏi khác nhau
+      → Nếu lưu hết sẽ bị lặp 3 lần.
+
+    - Giải pháp: dùng set "seen" để kiểm tra đã lưu chưa.
+      Nếu context đã trong seen → bỏ qua (continue).
+      Nếu chưa → lưu vào file mới, thêm vào seen.
+
+    - Kết quả: 400 câu hỏi → 287 context duy nhất
+      Lưu thành: data/viquad/ctx_0000.txt ... ctx_0286.txt
+      Mỗi file chứa 1 đoạn Wikipedia (~400-2700 ký tự)
+
+    - f"ctx_{ctx_count:04d}.txt": format số 4 chữ số
+      VD: 0 → "ctx_0000.txt", 12 → "ctx_0012.txt"
+
+----------------------------------------------------
+OUTPUT SAU KHI CHẠY BƯỚC 1
+----------------------------------------------------
+    data/
+    ├── qa_benchmark.json      ← 400 cặp QA (dùng để evaluate)
+    └── viquad/
+        ├── ctx_0000.txt       ← đoạn Wikipedia #1
+        ├── ctx_0001.txt       ← đoạn Wikipedia #2
+        ├── ...
+        └── ctx_0286.txt       ← đoạn Wikipedia #287
+
+
+==================================================
+BƯỚC 2 — src/ingestion/ingest.py
+==================================================
+
+MỤC ĐÍCH:
+    Đọc tất cả tài liệu (PDF + ViQuAD contexts), chunk nhỏ ra,
+    embed thành vectors, lưu vào ChromaDB để phục vụ retrieval.
+
+----------------------------------------------------
+CODE VÀ GIẢI THÍCH TỪNG PHẦN
+----------------------------------------------------
+
+--- PHẦN 1: Làm sạch text ---
+
+    def clean_text(text: str) -> str:
+        text = unicodedata.normalize("NFC", text)
+        text = re.sub(r"[^\w\s\.,;:!?()\-–—/\\%\u00C0-\u024F\u1E00-\u1EFF]", " ", text)
+        text = re.sub(r"\s+", " ", text)
+        return text.strip()
+
+    - unicodedata.normalize("NFC", text):
+      Chuẩn hóa Unicode về dạng NFC (Canonical Decomposition + Composition).
+      Tiếng Việt có thể biểu diễn chữ "ồ" theo 2 cách:
+        + Precomposed: 1 ký tự "ồ" (NFC) ← dạng chuẩn
+        + Decomposed: "o" + dấu huyền + dấu mũ (NFD)
+      Normalize về NFC để thống nhất, tránh lỗi so sánh chuỗi.
+
+    - re.sub(r"[^\w\s\.,...]", " ", text):
+      Giữ lại: chữ cái, số, khoảng trắng, dấu câu phổ biến,
+               ký tự Latin mở rộng (u00C0-u024F),
+               ký tự tiếng Việt (u1E00-u1EFF)
+      Xóa: ký tự đặc biệt lạ, emoji, ký tự kiểm soát
+
+    - re.sub(r"\s+", " ", text):
+      Thu gọn nhiều khoảng trắng/xuống dòng liên tiếp thành 1 khoảng trắng
+
+
+--- PHẦN 2: Load PDF ---
+
+    def load_pdfs(pdf_dir):
+        for fname in pdf_files:
+            loader = PyPDFLoader(path)
+            pages = loader.load()
+            for page in pages:
+                page.page_content = clean_text(page.page_content)
+            docs.extend(pages)
+
+    - PyPDFLoader: đọc từng trang PDF, mỗi trang là 1 Document
+    - Mỗi Document có: page_content (text) + metadata (source, page)
+    - Làm sạch text của từng trang trước khi lưu
+    - 5 PDF → hàng trăm pages
+
+
+--- PHẦN 3: Load ViQuAD contexts ---
+
+    def load_viquad_contexts(viquad_dir):
+        for fname in txt_files:
+            loader = TextLoader(path, encoding="utf-8")
+            pages = loader.load()
+            for page in pages:
+                page.page_content = clean_text(page.page_content)
+                page.metadata["source"] = fname
+            docs.extend(pages)
+
+    - TextLoader: đọc file .txt đơn giản, mỗi file = 1 Document
+    - Gán metadata["source"] = tên file (VD: "ctx_0012.txt")
+      để sau này biết chunk đến từ context nào
+    - 287 file .txt → 287 Documents
+
+
+--- PHẦN 4: Chunk tài liệu ---
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=400,
+        chunk_overlap=120,
+        separators=["\n\n", "\n", ".", " "],
+    )
+    chunks = splitter.split_documents(docs)
+
+    - Tại sao phải chunk?
+      ChromaDB lưu embedding của từng đoạn nhỏ.
+      Nếu để nguyên cả trang PDF (2000+ ký tự), embedding sẽ quá chung chung,
+      không đại diện cho 1 ý cụ thể → retrieval kém chính xác.
+      Chunk nhỏ → embedding tập trung vào 1 ý → tìm kiếm chính xác hơn.
+
+    - chunk_size=400: mỗi chunk tối đa 400 ký tự (~60-80 từ tiếng Việt)
+
+    - chunk_overlap=120: 120 ký tự cuối chunk trước được lặp lại ở đầu
+      chunk sau. Tránh trường hợp câu trả lời bị cắt đứt ở ranh giới chunk.
+      VD: "...Tháp Eiffel cao 324 | mét, được xây năm..."
+                                 ↑ ranh giới chunk
+      Nếu không overlap, "324 mét" có thể bị tách ra 2 chunk khác nhau.
+
+    - separators=["\n\n", "\n", ".", " "]:
+      Ưu tiên cắt tại: đoạn văn → dòng → câu → từ
+      Tránh cắt giữa chừng một câu nếu có thể.
+
+    - Kết quả: ~831 chunks từ PDF + ViQuAD contexts
+
+
+--- PHẦN 5: Embed và lưu vào ChromaDB ---
+
+    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+    vectorstore = Chroma.from_documents(
+        documents=chunks,
+        embedding=embeddings,
+        persist_directory=CHROMA_DIR,
+    )
+
+    - HuggingFaceEmbeddings: chạy model embedding trên máy local,
+      không cần API, không tốn tiền.
+      Model: paraphrase-multilingual-MiniLM-L12-v2
+        + Hỗ trợ 50+ ngôn ngữ kể cả tiếng Việt
+        + Nhẹ (~120MB), nhanh
+        + Output: vector 384 chiều cho mỗi đoạn text
+
+    - Quá trình embedding:
+      "Tháp Eiffel cao 324 mét" → [0.12, -0.34, 0.89, ...] (384 số)
+      Hai đoạn văn có nghĩa giống nhau → vectors gần nhau trong không gian
+
+    - Chroma.from_documents(): tạo index HNSW từ tất cả vectors,
+      lưu persistent vào data/chroma_db/
+
+    - persist_directory: ChromaDB lưu xuống ổ đĩa, tắt máy bật lại
+      vẫn còn → không cần embed lại từ đầu
+
+----------------------------------------------------
+OUTPUT SAU KHI CHẠY BƯỚC 2
+----------------------------------------------------
+    data/
+    └── chroma_db/
+        ├── chroma.sqlite3         ← metadata, text, mapping
+        └── [UUID]/
+            ├── data_level0.bin    ← 831 embedding vectors
+            ├── header.bin         ← HNSW index header
+            ├── length.bin         ← độ dài vectors
+            └── link_lists.bin     ← đồ thị HNSW để tìm kiếm nhanh
+
+
+==================================================
+TÓM TẮT LUỒNG DỮ LIỆU PHASE 1
+==================================================
+
+HuggingFace (ViQuAD 2.0)
+    → 3,814 cặp validation
+        → lọc unanswerable → 2,653 cặp
+            → sample 400 cặp (seed=42)
+                → data/qa_benchmark.json     ← EVALUATE (Phase 2+)
+                → data/viquad/ctx_*.txt  ─┐
+                                           │
+data/pdfs/*.pdf ───────────────────────────┤
+                                           ↓
+                                       ingest.py
+                                           │
+                                    clean + chunk
+                                    (400 chars, overlap 120)
+                                           │
+                                    embed (MiniLM, 384 chiều)
+                                           │
+                                           ↓
+                                   data/chroma_db/     ← RETRIEVE (Phase 2+)
+                                   (831 chunks indexed)
+
+==================================================

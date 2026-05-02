@@ -1,0 +1,21 @@
+{
+  "method": "M5_SelfRAG",
+  "config": {
+    "top_k": 4,
+    "chunk_size": 400,
+    "chunk_overlap": 120,
+    "embedding": "paraphrase-multilingual-MiniLM-L12-v2",
+    "retrieval": "Dense + Adaptive (retrieve-decision) + Self-reflection"
+  },
+  "metrics": {
+    "exact_match": 0.1,
+    "rouge_l": 0.2474,
+    "n_samples": 400,
+    "context_hit_rate": 0.4225,
+    "context_recall": 0.1333,
+    "faithfulness": 0.1875,
+    "answer_relevancy": 0.2595,
+    "n_ragas_samples": 50,
+    "ragas_note": "RAGAS run with fresh Groq key, n=50"
+  }
+}

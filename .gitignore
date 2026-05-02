@@ -1,0 +1,45 @@
+# Environment & secrets
+.env
+.env.local
+
+# Virtual environment
+rag_env/
+venv/
+env/
+.venv/
+
+# Vector databases (regeneratable — run ingestion scripts)
+data/chroma_db/
+data/ablation_chroma/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Build artifacts
+*.egg-info/
+dist/
+build/

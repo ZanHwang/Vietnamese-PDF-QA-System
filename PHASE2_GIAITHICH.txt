@@ -1,0 +1,505 @@
+==================================================
+PHASE 2 — HƯỚNG DẪN CHẠY & GIẢI THÍCH CHI TIẾT
+==================================================
+
+Phase 2 chỉ cần chạy 1 file:
+
+    python run_m1_eval.py
+
+File này tự gọi tất cả các module bên dưới và thực hiện toàn bộ:
+    1. Load 400 câu hỏi từ benchmark
+    2. Với mỗi câu: retrieve chunks → tạo prompt → gọi LLM → lấy câu trả lời
+    3. Lưu kết quả, tính metrics
+    4. Chạy RAGAS evaluation
+
+Trước khi chạy Phase 2, Phase 1 phải đã hoàn thành:
+    - data/qa_benchmark.json phải tồn tại
+    - data/chroma_db/ phải tồn tại (đã có 831 chunks indexed)
+
+
+==================================================
+CÁC FILE ĐÃ TẠO TRONG PHASE 2
+==================================================
+
+    src/retrieval/dense.py       ← tìm chunks liên quan
+    src/generation/llm.py        ← gọi LLM sinh câu trả lời
+    src/generation/prompts.py    ← template prompt
+    src/methods/m1_naive_rag.py  ← ghép pipeline M1 hoàn chỉnh
+    src/evaluation/metrics.py    ← tính Exact Match, ROUGE-L, Hit Rate
+    src/evaluation/ragas_eval.py ← tính RAGAS metrics (cần API)
+    run_m1_eval.py               ← script chạy chính
+
+
+==================================================
+FILE 1 — src/retrieval/dense.py
+==================================================
+
+MỤC ĐÍCH: Nhận câu hỏi, tìm trong ChromaDB top-K chunks giống nhất.
+
+CODE:
+    class DenseRetriever:
+        def __init__(self):
+            embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+            self.vectorstore = Chroma(
+                persist_directory=CHROMA_DIR,
+                embedding_function=embeddings,
+            )
+
+        def retrieve(self, query: str, k: int = TOP_K) -> list:
+            return self.vectorstore.similarity_search(query, k=k)
+
+GIẢI THÍCH:
+
+    __init__():
+    - HuggingFaceEmbeddings: load model paraphrase-multilingual-MiniLM-L12-v2
+      vào RAM (chạy local, không cần API)
+    - Chroma(...): kết nối đến ChromaDB đã có sẵn ở data/chroma_db/
+      KHÔNG tạo mới, chỉ đọc lại vectorstore đã build từ Phase 1
+
+    retrieve(query, k=4):
+    - Nhận câu hỏi dạng text
+    - Embed câu hỏi thành vector 384 chiều (cùng model với lúc index)
+    - similarity_search: tìm K vectors gần nhất trong ChromaDB
+      bằng cosine similarity (góc giữa 2 vectors)
+    - Trả về list K Document objects (mỗi doc có page_content + metadata)
+
+    Ví dụ:
+        query = "Tháp Eiffel được xây năm nào?"
+        → embed → [0.12, -0.34, ...]
+        → tìm 4 chunks gần nhất trong 831 chunks
+        → trả về 4 đoạn text về Tháp Eiffel
+
+    TOP_K = 4 (cấu hình trong src/config.py)
+
+
+==================================================
+FILE 2 — src/generation/prompts.py
+==================================================
+
+MỤC ĐÍCH: Định nghĩa template prompt gửi cho LLM.
+
+CODE:
+    M1_PROMPT = """Dựa vào các đoạn văn bản dưới đây, hãy trả lời câu hỏi
+    một cách ngắn gọn và chính xác bằng tiếng Việt.
+    Chỉ dựa vào thông tin trong ngữ cảnh được cung cấp.
+    Nếu không tìm thấy câu trả lời, hãy nói "Không tìm thấy thông tin."
+
+    Ngữ cảnh:
+    {context}
+
+    Câu hỏi: {question}
+
+    Câu trả lời:"""
+
+GIẢI THÍCH:
+
+    - {context}: placeholder, sẽ được thay bằng 4 chunks retrieve được,
+      nối với nhau bằng 2 dòng trống (\n\n)
+
+    - {question}: placeholder, sẽ được thay bằng câu hỏi thực tế
+
+    - "Chỉ dựa vào thông tin trong ngữ cảnh": ép LLM không dùng
+      kiến thức nội tại, chỉ dùng context cung cấp
+      → đảm bảo câu trả lời trung thực với tài liệu (Faithfulness)
+
+    - "Không tìm thấy thông tin": khi retrieval thất bại (retrieve
+      sai context), LLM không bịa đặt mà báo không có
+
+    Ví dụ prompt sau khi format:
+        Ngữ cảnh:
+        Tháp Eiffel là công trình kiến trúc bằng sắt...
+        [chunk 2]
+        [chunk 3]
+        [chunk 4]
+
+        Câu hỏi: Tháp Eiffel cao bao nhiêu mét?
+
+        Câu trả lời:
+
+
+==================================================
+FILE 3 — src/generation/llm.py
+==================================================
+
+MỤC ĐÍCH: Gọi LLM (Groq) sinh câu trả lời từ prompt.
+          Xử lý rate limit với retry + backoff.
+
+CODE:
+    GROQ_MODEL = "llama-3.3-70b-versatile"   # từ config.py — single source of truth
+    MAX_RETRY_PER_KEY = 3    # số lần retry trước khi chuyển sang key kế tiếp
+    WAIT_BASE = 20           # giây chờ cơ bản khi bị rate limit
+
+    def _load_keys() -> list[str]:
+        keys = []
+        for i in range(1, 20):
+            env = "GROQ_API_KEY" if i == 1 else f"GROQ_API_KEY_{i}"
+            k = os.getenv(env, "").strip()
+            if k:
+                keys.append(k)
+        return keys
+
+    class LLMWrapper:
+        def __init__(self):
+            self._keys = _load_keys()          # đọc tất cả key từ .env
+            self._idx = 0                       # key đang dùng hiện tại
+            self._clients = [Groq(api_key=k) for k in self._keys]
+
+        def generate(self, prompt: str) -> str:
+            total_attempts = len(self._keys) * MAX_RETRY_PER_KEY
+            for attempt in range(total_attempts):
+                try:
+                    return self._current().chat.completions.create(
+                        model=GROQ_MODEL,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.1, max_tokens=512,
+                    ).choices[0].message.content.strip()
+                except Exception as e:
+                    if is_rate_limit(e):
+                        key_attempt = attempt % MAX_RETRY_PER_KEY
+                        if key_attempt < MAX_RETRY_PER_KEY - 1:
+                            time.sleep(WAIT_BASE * (key_attempt + 1))
+                        else:
+                            self._next_key()   # chuyển sang key mới
+                            time.sleep(5)
+                    else:
+                        raise
+            raise RuntimeError(f"LLM failed sau {total_attempts} attempts")
+
+GIẢI THÍCH:
+
+    _load_keys():
+    - Đọc GROQ_API_KEY, GROQ_API_KEY_2, ..., GROQ_API_KEY_N từ .env
+    - Dự án dùng 7 keys → total_attempts = 7 × 3 = 21 attempts tối đa
+
+    __init__():
+    - Tạo sẵn 1 Groq client cho mỗi key (self._clients[])
+    - self._idx: trỏ đến key đang dùng hiện tại
+
+    generate(prompt):
+    - total_attempts = số key × MAX_RETRY_PER_KEY
+    - Mỗi key được thử tối đa 3 lần trước khi chuyển sang key tiếp theo
+
+    Xử lý lỗi rate limit (429/rate/quota/exhausted):
+    TRONG VÒNG ĐỜI 1 KEY (key_attempt 0, 1):
+        → Đợi backoff: 20s, 40s rồi thử lại với cùng key
+
+    KHI HẾT RETRY TRÊN KEY NÀY (key_attempt == 2):
+        → Gọi _next_key() → chuyển sang key tiếp theo
+        → Đợi 5s rồi thử lại với key mới
+
+    Lỗi khác (network, auth...): raise ngay, không retry
+
+    Lý do chọn model llama-3.3-70b-versatile (từ config.py):
+    - Groq free tier: quota cao, dùng thoải mái
+    - llama-3.3-70b-versatile: model mạnh nhất trên Groq free
+    - Hỗ trợ tiếng Việt tốt, toàn dự án dùng cùng 1 model để so sánh công bằng
+
+    temperature=0.1: gần deterministic, câu trả lời ổn định
+    max_tokens=512: giới hạn độ dài câu trả lời
+
+
+==================================================
+FILE 4 — src/methods/m1_naive_rag.py
+==================================================
+
+MỤC ĐÍCH: Ghép DenseRetriever + LLMWrapper thành pipeline M1 hoàn chỉnh.
+
+CODE:
+    class NaiveRAG:
+        def __init__(self):
+            self.retriever = DenseRetriever()
+            self.llm = LLMWrapper()
+
+        def run(self, question: str, k: int = TOP_K) -> dict:
+            docs = self.retriever.retrieve(question, k=k)
+            context = "\n\n".join(d.page_content for d in docs)
+            prompt = M1_PROMPT.format(context=context, question=question)
+            answer = self.llm.generate(prompt)
+            return {
+                "question": question,
+                "answer": answer,
+                "contexts": [d.page_content for d in docs],
+            }
+
+GIẢI THÍCH:
+
+    __init__():
+    - Khởi tạo retriever và llm một lần duy nhất
+    - DenseRetriever load model embedding + kết nối ChromaDB
+    - LLMWrapper kết nối Groq API
+
+    run(question):
+    Bước 1 — Retrieve:
+        docs = self.retriever.retrieve(question, k=4)
+        → Tìm 4 chunks liên quan nhất từ ChromaDB
+
+    Bước 2 — Tạo context:
+        context = "\n\n".join(d.page_content for d in docs)
+        → Nối 4 chunks thành 1 đoạn text dài, cách nhau 2 dòng trống
+
+    Bước 3 — Format prompt:
+        prompt = M1_PROMPT.format(context=context, question=question)
+        → Điền context và câu hỏi vào template
+
+    Bước 4 — Generate:
+        answer = self.llm.generate(prompt)
+        → Gửi prompt lên LLM, nhận câu trả lời
+
+    Bước 5 — Trả về dict:
+        {
+          "question": câu hỏi gốc,
+          "answer": câu trả lời từ LLM,
+          "contexts": list 4 chunk texts (để evaluate sau)
+        }
+
+    Luồng dữ liệu:
+        "Tháp Eiffel cao bao nhiêu?"
+            ↓ retrieve
+        [chunk1: "Tháp Eiffel là...", chunk2: "...", chunk3, chunk4]
+            ↓ format prompt
+        "Ngữ cảnh: chunk1\n\nchunk2...\nCâu hỏi: Tháp Eiffel cao bao nhiêu?"
+            ↓ LLM
+        "Tháp Eiffel cao 324 mét."
+
+
+==================================================
+FILE 5 — src/evaluation/metrics.py
+==================================================
+
+MỤC ĐÍCH: Tính 3 metrics không cần API (chạy hoàn toàn local).
+
+--- METRIC 1: Exact Match ---
+
+    def exact_match(pred: str, gold: str) -> float:
+        return 1.0 if _normalize(pred) == _normalize(gold) else 0.0
+
+    - So sánh sau khi normalize (lowercase, bỏ dấu câu, chuẩn hóa Unicode)
+    - Trả về 1.0 nếu khớp hoàn toàn, 0.0 nếu không
+    - Ví dụ:
+        pred = "Tháp Eiffel cao 324 mét."
+        gold = "324 mét"
+        → normalize: "thap eiffel cao 324 met" vs "324 met"
+        → không khớp → 0.0
+
+    - Tại sao EM thấp (0.11)?
+      Model sinh câu đầy đủ: "Tháp Eiffel cao 324 mét."
+      Ground truth ngắn: "324 mét"
+      → Dù đúng thực chất nhưng EM = 0 vì không khớp hoàn toàn
+
+--- METRIC 2: ROUGE-L ---
+
+    def rouge_l(pred, gold):
+        lcs = _lcs(p_tok, g_tok)
+        prec = lcs / len(p_tok)
+        rec  = lcs / len(g_tok)
+        return 2 * prec * rec / (prec + rec)
+
+    - LCS = Longest Common Subsequence (dãy con chung dài nhất)
+      Không cần liên tiếp, chỉ cần cùng thứ tự
+    - Tính F1 từ precision và recall của LCS
+    - Ví dụ:
+        pred = ["tháp", "eiffel", "cao", "324", "mét"]
+        gold = ["324", "mét"]
+        LCS = ["324", "mét"] → length = 2
+        precision = 2/5 = 0.4
+        recall    = 2/2 = 1.0
+        ROUGE-L   = 2×0.4×1.0 / (0.4+1.0) = 0.57
+
+    - Phản ánh độ overlap token, linh hoạt hơn EM
+
+--- METRIC 3: Context Hit Rate ---
+
+    def context_hit_rate(retrieved, gold_context, threshold=0.3):
+        gold_tokens = set(normalize(gold_context).split())
+        for ctx in retrieved:
+            ctx_tokens = set(normalize(ctx).split())
+            overlap = len(ctx_tokens & gold_tokens) / len(gold_tokens)
+            if overlap >= threshold:
+                return 1.0
+        return 0.0
+
+    - Kiểm tra xem retrieval có tìm được đúng context không
+    - So sánh từng chunk retrieve được với gold context (từ ViQuAD)
+    - Nếu bất kỳ chunk nào có ≥30% từ của gold context → hit = 1.0
+    - Kết quả 0.825: 82.5% câu hỏi retrieve được context đúng
+
+    - Tại sao không phải 100%?
+      Gold context có thể bị chunk cắt ra nhiều mảnh,
+      hoặc câu hỏi retrieves context khác nhưng vẫn có câu trả lời
+
+    compute_local_metrics(results):
+    - Chạy 3 metrics trên toàn bộ kết quả
+    - Tính trung bình, làm tròn 4 chữ số thập phân
+    - Trả về dict {"exact_match": ..., "rouge_l": ..., "context_hit_rate": ...}
+
+
+==================================================
+FILE 6 — src/evaluation/ragas_eval.py
+==================================================
+
+MỤC ĐÍCH: Tính 3 RAGAS metrics — cần LLM làm "judge" (cần API Groq).
+
+CODE:
+    samples = [
+        SingleTurnSample(
+            user_input=r["question"],
+            response=r["answer"],
+            retrieved_contexts=r["contexts"],
+            reference=r["ground_truth"],
+        )
+        for r in subset
+    ]
+    result = evaluate(
+        dataset=EvaluationDataset(samples=samples),
+        metrics=[LLMContextRecall(), Faithfulness(), AnswerRelevancy()],
+        llm=llm,
+        embeddings=embeddings,
+    )
+
+GIẢI THÍCH:
+
+    Khác với metrics.py (tính công thức), RAGAS dùng LLM để đánh giá:
+    LLM đọc câu hỏi, câu trả lời, context → tự chấm điểm
+
+    METRIC 1 — Context Recall (0.667):
+    - Hỏi LLM: "Ground truth answer có thể được suy ra từ
+      retrieved contexts không?"
+    - Đánh giá xem context retrieve được có ĐỦ thông tin không
+    - 0.667 = 66.7% câu hỏi có đủ thông tin trong context
+
+    METRIC 2 — Faithfulness (0.600):
+    - Hỏi LLM: "Câu trả lời có trung thực với retrieved context không?
+      Có claim nào không có trong context không?"
+    - Phát hiện hallucination (model bịa đặt ngoài context)
+    - 0.600 = 60% câu trả lời hoàn toàn trung thực với context
+
+    METRIC 3 — Answer Relevancy (0.247):
+    - Hỏi LLM: "Câu trả lời có liên quan và đầy đủ với câu hỏi không?"
+    - 0.247 = thấp vì model nhỏ (8B) đôi khi trả lời dài dòng
+      hoặc không trả lời thẳng vào câu hỏi
+
+    Thực hiện trên n_samples=50 (không phải 400 vì tốn nhiều API call):
+    Mỗi sample RAGAS cần ~3-5 LLM calls để đánh giá
+
+    llm = ChatGroq(model="llama-3.3-70b-versatile"):
+    Dùng model lớn hơn (70B) để làm judge vì cần hiểu ngữ nghĩa tốt hơn
+
+    try/except: nếu RAGAS fail (rate limit, lỗi API) → trả về {} thay
+    vì crash cả chương trình
+
+
+==================================================
+FILE 7 — run_m1_eval.py (SCRIPT CHẠY CHÍNH)
+==================================================
+
+MỤC ĐÍCH: Điều phối toàn bộ quá trình evaluation M1.
+
+THAM SỐ CÓ THỂ CHỈNH:
+    SLEEP_SEC = 3.0    ← thời gian nghỉ giữa các LLM call (tránh rate limit)
+    N_EVAL    = None   ← None = chạy hết 400; đặt số nguyên để chạy ít hơn
+    N_RAGAS   = 50     ← số samples cho RAGAS evaluation
+    SAVE_EVERY = 10    ← lưu checkpoint sau mỗi 10 câu
+
+LUỒNG THỰC HIỆN:
+
+    1. Load benchmark:
+       Đọc data/qa_benchmark.json → 400 cặp QA
+
+    2. Resume support:
+       Nếu results/m1_raw.json đã tồn tại (chạy dở) → load lại,
+       lọc ra những câu chưa có câu trả lời → chỉ chạy phần còn lại
+       Cho phép tắt máy giữa chừng rồi chạy tiếp mà không mất dữ liệu
+
+    3. Vòng lặp chính (cho mỗi câu hỏi):
+       a. rag.run(question) → retrieve + generate → answer
+       b. Append kết quả vào list results
+       c. Nếu đã đủ 10 câu mới → lưu checkpoint ra file
+       d. Sleep SLEEP_SEC giây (tránh hit rate limit Groq)
+       e. Nếu lỗi → ghi log, sleep 15s, tiếp tục câu tiếp theo
+
+    4. Lưu toàn bộ raw results:
+       results/m1_raw.json — 400 records:
+       [
+         {
+           "question": "...",
+           "answer": "...",       ← câu trả lời từ LLM
+           "ground_truth": "...", ← đáp án đúng từ ViQuAD
+           "contexts": [...],     ← 4 chunks đã retrieve
+           "gold_context": "..."  ← context gốc từ ViQuAD (để tính metrics)
+         },
+         ...
+       ]
+
+    5. Tính local metrics:
+       compute_local_metrics(results) → Exact Match, ROUGE-L, Context Hit Rate
+
+    6. Chạy RAGAS:
+       run_ragas_eval(results, n_samples=50)
+       → Context Recall, Faithfulness, Answer Relevancy
+
+    7. Lưu baseline:
+       results/m1_baseline.json:
+       {
+         "method": "M1_NaiveRAG",
+         "config": {"top_k": 4, "chunk_size": 400, ...},
+         "metrics": {tất cả metrics}
+       }
+
+    _save(path, data):
+    - json.dump với ensure_ascii=False (giữ tiếng Việt)
+    - f.flush() + os.fsync(): ép OS ghi xuống đĩa ngay
+      tránh mất dữ liệu nếu tắt máy đột ngột
+
+
+==================================================
+LUỒNG DỮ LIỆU TỔNG THỂ PHASE 2
+==================================================
+
+data/qa_benchmark.json (400 câu hỏi)
+    │
+    ▼
+run_m1_eval.py — vòng lặp 400 lần
+    │
+    ├── câu hỏi ──► dense.py (DenseRetriever)
+    │                   │ embed câu hỏi → tìm cosine similarity
+    │                   ▼
+    │              data/chroma_db/ (831 chunks)
+    │                   │ trả về top-4 chunks
+    │                   ▼
+    ├── context ──► prompts.py (M1_PROMPT.format)
+    │                   │ điền context + câu hỏi vào template
+    │                   ▼
+    └── prompt ──► llm.py (LLMWrapper)
+                       │ gọi Groq llama-3.3-70b-versatile
+                       ▼
+                   câu trả lời
+                       │
+                       ▼
+               results/m1_raw.json (lưu checkpoint)
+                       │
+                       ▼
+               metrics.py → Exact Match, ROUGE-L, Context Hit Rate
+                       │
+               ragas_eval.py → Context Recall, Faithfulness, Answer Relevancy
+                       │
+                       ▼
+               results/m1_baseline.json (kết quả cuối)
+
+
+==================================================
+KẾT QUẢ ĐẠT ĐƯỢC (n=400)
+==================================================
+
+    Exact Match       : 0.1100   (11%)
+    ROUGE-L           : 0.3993   (40%)
+    Context Hit Rate  : 0.8250   (82.5%)
+
+    RAGAS (n=50):
+    Context Recall    : 0.6667   (66.7%)
+    Faithfulness      : 0.6000   (60%)
+    Answer Relevancy  : 0.2473   (24.7%)
+
+Đây là kết quả BASELINE của Naive RAG — các phase tiếp theo
+(Hybrid Search, RAG-Fusion, CRAG, Self-RAG) sẽ cải thiện những con số này.
+
+==================================================
