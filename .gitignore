@@ -2,6 +2,10 @@
 .env
 .env.local
 
+# Claude Code internal files
+CLAUDE.md
+.claude/
+
 # Experiment results & personal notes
 results/
 ketqua.txt
