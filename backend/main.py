@@ -43,6 +43,7 @@ METHOD_NAMES = {
     "m3": "M3 - RAG-Fusion",
     "m4": "M4 - CRAG",
     "m5": "M5 - Self-RAG Lite",
+    "m6": "M6 - Advanced (Hybrid + Reranker)",
 }
 
 
@@ -63,6 +64,9 @@ def get_pipeline(method: str):
         elif method == "m5":
             from src.methods.m5_selfrag import SelfRAG
             _pipelines["m5"] = SelfRAG()
+        elif method == "m6":
+            from src.methods.m6_advanced import AdvancedRAG
+            _pipelines["m6"] = AdvancedRAG()
         else:
             raise ValueError(f"Unknown method: {method}")
     return _pipelines[method]
@@ -160,7 +164,7 @@ async def upload_pdf(file: UploadFile = File(...)):
 @app.get("/metrics")
 def get_metrics():
     metrics = {}
-    for m in ["m1", "m2", "m3", "m4", "m5"]:
+    for m in ["m1", "m2", "m3", "m4", "m5", "m6"]:
         path = os.path.join(ABS_RESULTS_DIR, f"{m}_baseline.json")
         if os.path.exists(path):
             with open(path, encoding="utf-8") as f:

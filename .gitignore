@@ -13,6 +13,19 @@ TONG_QUAN_DU_AN.txt
 HOW_TO_RUN.txt
 PHASE*_GIAITHICH.txt
 dochieu.txt
+SLIDE_CONTENT.txt
+
+# Regeneratable data (run prepare_viquad.py to rebuild)
+data/viquad/
+data/qa_benchmark.json
+
+# User-uploaded PDFs (not part of codebase)
+data/pdfs/
+
+# Office documents
+*.docx
+*.xlsx
+*.pptx
 
 # Virtual environment
 rag_env/

@@ -6,7 +6,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 from datasets import load_dataset
 from src.config import VIQUAD_DIR, QA_BENCHMARK_PATH
 
-N_PAIRS = 400
+N_PAIRS = 800
 SEED = 42
 random.seed(SEED)
 

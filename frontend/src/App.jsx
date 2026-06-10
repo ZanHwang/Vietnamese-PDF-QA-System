@@ -6,6 +6,7 @@ const METHODS = [
   { id: 'm3', name: 'M3 — RAG-Fusion',        desc: 'Multi-query + Hybrid + RRF' },
   { id: 'm4', name: 'M4 — CRAG',              desc: 'Retrieval Evaluator + Self-correction' },
   { id: 'm5', name: 'M5 — Self-RAG Lite',     desc: 'Adaptive Retrieval + Reflection' },
+  { id: 'm6', name: 'M6 — Advanced RAG',      desc: 'Hybrid + Multilingual Cross-Encoder Reranker' },
 ]
 
 const METRIC_LABELS = [
@@ -215,13 +216,13 @@ function MetricsTab() {
   if (!metrics || Object.keys(metrics).length === 0)
     return <div className="tab-content">Chưa có dữ liệu metrics.</div>
 
-  const present = ['m1', 'm2', 'm3', 'm4', 'm5'].filter(m => metrics[m])
+  const present = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'].filter(m => metrics[m])
 
   return (
     <div className="tab-content">
       <div className="metrics-header">
-        <h3>Kết quả đánh giá M1–M5</h3>
-        <p className="metrics-note">Local metrics: n=400 | RAGAS: n=50 mẫu, judge = llama-3.3-70b</p>
+        <h3>Kết quả đánh giá M1–M6</h3>
+        <p className="metrics-note">Local metrics: n=800 | RAGAS: n=50 mẫu, judge = llama-3.3-70b</p>
       </div>
       <div className="metrics-table-wrap">
         <table className="metrics-table">
@@ -343,7 +344,7 @@ export default function App() {
       <header className="app-header">
         <div className="header-inner">
           <h1>RAG Demo — Vietnamese Q&amp;A</h1>
-          <p>So sánh 5 phương pháp RAG trên văn bản tiếng Việt · UIT-ViQuAD 2.0</p>
+          <p>So sánh 6 phương pháp RAG trên văn bản tiếng Việt · UIT-ViQuAD 2.0</p>
         </div>
         <div className="method-pills">
           {METHODS.map(m => (

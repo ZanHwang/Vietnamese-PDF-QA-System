@@ -5,7 +5,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 from src.evaluation.metrics import rouge_l, exact_match, context_hit_rate
 from src.config import RESULTS_DIR
 
-METHODS = ["m1", "m2", "m3", "m4", "m5"]
+METHODS = ["m1", "m2", "m3", "m4", "m5", "m6"]
 
 # Thresholds
 CORRECT_RL   = 0.3   # ROUGE-L >= this → correct
